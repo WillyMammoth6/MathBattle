@@ -2,338 +2,407 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fun Math Game for Kids</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Dragon Battle</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #121212; /* Dark background */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
-            color: #e0e0e0; /* Light text */
-            text-align: center;
-            position: relative; /* For absolute positioning of canvas */
-        }
-        #game-container {
-            max-width: 90%;
-            padding: 20px;
-            background-color: #1e1e1e; /* Darker container */
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Subtle shadow */
-            position: relative;
-            z-index: 1; /* Ensure game content is above canvas if needed */
-        }
-        h1 {
-            font-size: 2em;
-            color: #ff6347; /* Bright accent */
-            margin-bottom: 20px;
-        }
-        #problem {
-            font-size: 3em;
-            margin: 20px 0;
-            color: #add8e6; /* Light blue for visibility */
-            display: none; /* Initially hidden */
-        }
-        #options {
+            padding: 0;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            display: none; /* Initially hidden */
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
         }
-        .option-btn {
-            font-size: 2.5em;
-            padding: 20px;
-            background-color: #333333; /* Dark button */
-            color: #ffffff; /* Light text */
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: background-color 0.3s;
+        #gameCanvas {
             width: 100%;
+            max-width: 600px;
+            height: 50vh;
+            background-color: #87CEEB; /* Sky blue background */
+            touch-action: none;
+        }
+        #question {
+            font-size: 24px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        #inputDisplay {
+            font-size: 28px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 2px solid #000;
+            width: 200px;
+            text-align: center;
+            background-color: white;
+        }
+        #numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
             max-width: 300px;
-            margin: 0 auto;
-        }
-        .option-btn:hover {
-            background-color: #555555; /* Lighter hover */
-        }
-        #feedback {
-            font-size: 2em;
-            margin: 20px 0;
-            height: 50px;
-            display: none; /* Initially hidden */
-        }
-        #score {
-            font-size: 1.5em;
-            color: #ff4500; /* Bright orange */
-            display: none; /* Initially hidden */
-        }
-        #restart {
-            display: none;
-            font-size: 1.5em;
-            padding: 10px 20px;
-            background-color: #ffd700; /* Gold for contrast */
-            color: #000000; /* Dark text */
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        #restart:hover {
-            background-color: #ffc400;
-        }
-        #start {
-            font-size: 1.5em;
-            padding: 10px 20px;
-            background-color: #87ceeb; /* Sky blue */
-            color: #000000; /* Dark text */
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        #start:hover {
-            background-color: #00bfff;
-        }
-        #fireworks {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: none;
-            z-index: 2; /* Above game content for overlay */
         }
-        /* Mobile-specific adjustments */
-        @media (max-width: 600px) {
-            h1 { font-size: 1.5em; }
-            #problem { font-size: 2.5em; }
-            .option-btn { font-size: 2em; padding: 15px; }
-            #feedback { font-size: 1.5em; }
-            #score { font-size: 1.2em; }
+        .numButton {
+            font-size: 24px;
+            padding: 20px;
+            background-color: #ddd;
+            border: 1px solid #aaa;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        #delete {
+            grid-column: span 2;
+        }
+        #enter {
+            grid-column: span 1;
+        }
+        #message {
+            font-size: 32px;
+            margin-top: 20px;
+            text-align: center;
+            color: red;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <canvas id="fireworks"></canvas>
-    <div id="game-container">
-        <h1>Math Adventure!</h1>
-        <div id="problem"></div>
-        <div id="options"></div>
-        <div id="feedback"></div>
-        <div id="score">Score: 0/10</div>
-        <button id="start">Start Game!</button>
-        <button id="restart">Play Again!</button>
+    <canvas id="gameCanvas"></canvas>
+    <div id="question"></div>
+    <div id="inputDisplay"> </div>
+    <div id="numpad">
+        <div class="numButton" onclick="appendNumber('1')">1</div>
+        <div class="numButton" onclick="appendNumber('2')">2</div>
+        <div class="numButton" onclick="appendNumber('3')">3</div>
+        <div class="numButton" onclick="appendNumber('4')">4</div>
+        <div class="numButton" onclick="appendNumber('5')">5</div>
+        <div class="numButton" onclick="appendNumber('6')">6</div>
+        <div class="numButton" onclick="appendNumber('7')">7</div>
+        <div class="numButton" onclick="appendNumber('8')">8</div>
+        <div class="numButton" onclick="appendNumber('9')">9</div>
+        <div class="numButton" id="delete" onclick="deleteLast()">Delete</div>
+        <div class="numButton" onclick="appendNumber('0')">0</div>
+        <div class="numButton" id="enter" onclick="submitAnswer()">Enter</div>
     </div>
+    <div id="message"></div>
 
     <script>
-        let currentQuestion = 0;
-        let score = 0;
-        const totalQuestions = 10;
-
-        // Fireworks setup
-        const canvas = document.getElementById('fireworks');
+        const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let particles = [];
-        let animationFrameId;
-        let fireworksTimeout;
+        const questionDiv = document.getElementById('question');
+        const inputDisplay = document.getElementById('inputDisplay');
+        const messageDiv = document.getElementById('message');
+        const numpad = document.getElementById('numpad');
 
+        // Set canvas size dynamically
         function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                this.radius = Math.random() * 2 + 1;
-                this.velocity = {
-                    x: (Math.random() - 0.5) * 10,
-                    y: (Math.random() - 0.5) * 10
-                };
-                this.alpha = 1;
-                this.friction = 0.99;
-            }
+        // Game state
+        let avatarHealth = 3;
+        let dragonHealth = 3;
+        let currentInput = '';
+        let currentQuestion = {};
+        let gameOver = false;
+        let animationFrame = 0;
+        let animating = false;
+        let animationType = ''; // 'avatarAttack' or 'dragonAttack'
 
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.alpha;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-                ctx.fillStyle = this.color;
-                ctx.fill();
-                ctx.closePath();
-                ctx.restore();
-            }
-
-            update() {
-                this.velocity.x *= this.friction;
-                this.velocity.y *= this.friction;
-                this.x += this.velocity.x;
-                this.y += this.velocity.y;
-                this.alpha -= 0.01;
-            }
+        // Heart drawing functions
+        function drawHeart(x, y, full) {
+            ctx.beginPath();
+            ctx.moveTo(x, y + 5);
+            ctx.bezierCurveTo(x - 5, y, x - 10, y + 10, x, y + 15);
+            ctx.bezierCurveTo(x + 10, y + 10, x + 5, y, x, y + 5);
+            ctx.fillStyle = full ? 'red' : '#ccc';
+            ctx.fill();
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
         }
 
-        function createFireworks() {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
-            for (let i = 0; i < 100; i++) { // Number of particles
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                particles.push(new Particle(centerX, centerY, color));
-            }
+        function drawHalfHeart(x, y) {
+            ctx.beginPath();
+            ctx.moveTo(x, y + 5);
+            ctx.bezierCurveTo(x - 5, y, x - 10, y + 10, x, y + 15);
+            ctx.lineTo(x, y + 5);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
         }
 
-        function animateFireworks() {
-            ctx.globalAlpha = 0.1;
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Draw avatar (stick figure knight)
+        function drawAvatar(x, y) {
+            // Body
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y + 40);
+            ctx.stroke();
 
-            particles.forEach((particle, index) => {
-                if (particle.alpha <= 0) {
-                    particles.splice(index, 1);
+            // Head
+            ctx.beginPath();
+            ctx.arc(x, y - 10, 10, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Helmet
+            ctx.beginPath();
+            ctx.moveTo(x - 10, y - 20);
+            ctx.lineTo(x + 10, y - 20);
+            ctx.lineTo(x, y - 30);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Arms
+            ctx.beginPath();
+            ctx.moveTo(x, y + 10);
+            ctx.lineTo(x - 15, y + 20);
+            ctx.moveTo(x, y + 10);
+            ctx.lineTo(x + 15, y + 20);
+            ctx.stroke();
+
+            // Legs
+            ctx.beginPath();
+            ctx.moveTo(x, y + 40);
+            ctx.lineTo(x - 10, y + 60);
+            ctx.moveTo(x, y + 40);
+            ctx.lineTo(x + 10, y + 60);
+            ctx.stroke();
+
+            // Sword
+            ctx.beginPath();
+            ctx.moveTo(x + 15, y + 20);
+            ctx.lineTo(x + 25, y + 10);
+            ctx.lineTo(x + 35, y + 20);
+            ctx.stroke();
+        }
+
+        // Draw dragon
+        function drawDragon(x, y) {
+            // Body
+            ctx.beginPath();
+            ctx.ellipse(x, y + 20, 40, 20, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Head
+            ctx.beginPath();
+            ctx.ellipse(x - 50, y, 20, 15, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Eyes
+            ctx.beginPath();
+            ctx.arc(x - 55, y - 5, 2, 0, Math.PI * 2);
+            ctx.arc(x - 45, y - 5, 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+
+            // Mouth
+            ctx.beginPath();
+            ctx.moveTo(x - 60, y + 5);
+            ctx.lineTo(x - 40, y + 5);
+            ctx.stroke();
+
+            // Wings
+            ctx.beginPath();
+            ctx.moveTo(x - 20, y + 10);
+            ctx.lineTo(x - 30, y - 20);
+            ctx.lineTo(x - 10, y - 10);
+            ctx.moveTo(x + 20, y + 10);
+            ctx.lineTo(x + 30, y - 20);
+            ctx.lineTo(x + 10, y - 10);
+            ctx.stroke();
+
+            // Tail
+            ctx.beginPath();
+            ctx.moveTo(x + 40, y + 20);
+            ctx.lineTo(x + 60, y + 30);
+            ctx.lineTo(x + 70, y + 20);
+            ctx.stroke();
+
+            // Legs
+            ctx.beginPath();
+            ctx.moveTo(x - 20, y + 40);
+            ctx.lineTo(x - 25, y + 50);
+            ctx.moveTo(x + 20, y + 40);
+            ctx.lineTo(x + 25, y + 50);
+            ctx.stroke();
+        }
+
+        // Draw fire breath animation
+        function drawFire(x, y, frame) {
+            ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            for (let i = 0; i < 5; i++) {
+                const offset = Math.sin(frame / 5 + i) * 5;
+                ctx.lineTo(x - 20 - i * 10, y + offset);
+            }
+            ctx.fill();
+        }
+
+        // Draw sword swing animation
+        function drawSwordSwing(x, y, frame) {
+            ctx.save();
+            ctx.translate(x + 15, y + 20);
+            ctx.rotate((frame / 20) * Math.PI);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(10, -10);
+            ctx.lineTo(20, 0);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Render health hearts
+        function renderHealth() {
+            // Avatar hearts
+            for (let i = 0; i < 3; i++) {
+                const heartX = 50 + i * 30;
+                const heartY = 20;
+                if (avatarHealth >= i + 1) {
+                    drawHeart(heartX, heartY, true);
+                } else if (avatarHealth >= i + 0.5) {
+                    drawHalfHeart(heartX, heartY);
                 } else {
-                    particle.update();
-                    particle.draw();
+                    drawHeart(heartX, heartY, false);
                 }
-            });
+            }
 
-            if (particles.length > 0) {
-                animationFrameId = requestAnimationFrame(animateFireworks);
+            // Dragon hearts
+            for (let i = 0; i < 3; i++) {
+                const heartX = canvas.width - 50 - i * 30;
+                const heartY = 20;
+                if (dragonHealth >= i + 1) {
+                    drawHeart(heartX, heartY, true);
+                } else if (dragonHealth >= i + 0.5) {
+                    drawHalfHeart(heartX, heartY);
+                } else {
+                    drawHeart(heartX, heartY, false);
+                }
+            }
+        }
+
+        // Main draw function
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw avatar
+            drawAvatar(100, canvas.height / 2 - 30);
+
+            // Draw dragon
+            drawDragon(canvas.width - 100, canvas.height / 2 - 30);
+
+            // Render health
+            renderHealth();
+
+            if (animating) {
+                if (animationType === 'avatarAttack') {
+                    drawSwordSwing(100, canvas.height / 2 - 30, animationFrame);
+                } else if (animationType === 'dragonAttack') {
+                    drawFire(canvas.width - 150, canvas.height / 2, animationFrame);
+                }
+                animationFrame++;
+                if (animationFrame > 20) {
+                    animating = false;
+                    animationFrame = 0;
+                    if (gameOver) {
+                        numpad.style.display = 'none';
+                        questionDiv.textContent = '';
+                        inputDisplay.textContent = '';
+                    }
+                }
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            draw();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Generate random math question
+        function generateQuestion() {
+            const ops = ['+', '-', '*', '/'];
+            const op = ops[Math.floor(Math.random() * ops.length)];
+            let a = Math.floor(Math.random() * 12) + 1;
+            let b = Math.floor(Math.random() * 12) + 1;
+            let answer;
+
+            if (op === '+') {
+                answer = a + b;
+            } else if (op === '-') {
+                if (a < b) [a, b] = [b, a];
+                answer = a - b;
+            } else if (op === '*') {
+                answer = a * b;
+            } else if (op === '/') {
+                while (a % b !== 0) {
+                    b = Math.floor(Math.random() * 12) + 1;
+                }
+                answer = a / b;
+            }
+
+            questionDiv.textContent = `${a} ${op} ${b} = ?`;
+            return { op, a, b, answer };
+        }
+
+        // Start game
+        currentQuestion = generateQuestion();
+
+        // Input functions
+        function appendNumber(num) {
+            if (gameOver) return;
+            if (currentInput.length < 3) { // Limit input to 3 digits max
+                currentInput += num;
+                inputDisplay.textContent = currentInput;
+            }
+        }
+
+        function deleteLast() {
+            if (gameOver) return;
+            currentInput = currentInput.slice(0, -1);
+            inputDisplay.textContent = currentInput;
+        }
+
+        function submitAnswer() {
+            if (gameOver || currentInput === '') return;
+            const userAnswer = parseInt(currentInput, 10);
+            const correct = userAnswer === currentQuestion.answer;
+
+            if (correct) {
+                dragonHealth -= 0.5;
+                animating = true;
+                animationType = 'avatarAttack';
+                if (dragonHealth <= 0) {
+                    gameOver = true;
+                    messageDiv.textContent = 'You Win! The dragon is defeated!';
+                    messageDiv.style.display = 'block';
+                }
             } else {
-                cancelAnimationFrame(animationFrameId);
-                canvas.style.display = 'none';
-            }
-        }
-
-        function startFireworks() {
-            particles = [];
-            canvas.style.display = 'block';
-            createFireworks();
-            animateFireworks();
-            // Stop after 2 seconds regardless
-            fireworksTimeout = setTimeout(() => {
-                particles = [];
-            }, 2000);
-        }
-
-        function generateProblem() {
-            const isAddition = Math.random() < 0.5;
-            const a = Math.floor(Math.random() * 10);
-            const b = Math.floor(Math.random() * 3); // 0, 1, or 2 for easier questions
-            let correctAnswer;
-
-            if (isAddition) {
-                correctAnswer = a + b;
-                return { problem: `${a} + ${b} = ?`, correct: correctAnswer, isAddition: true };
-            } else {
-                let num1 = a;
-                let num2 = b;
-                // Ensure num1 >= num2 for non-negative result
-                if (num2 > num1) [num1, num2] = [num2, num1]; // Swap if needed
-                correctAnswer = num1 - num2;
-                return { problem: `${num1} - ${num2} = ?`, correct: correctAnswer, isAddition: false };
-            }
-        }
-
-        function getWrongAnswers(correct, isAddition) {
-            const wrongs = new Set();
-            while (wrongs.size < 3) {  // 3 wrongs for 4 total options
-                let wrong = Math.floor(Math.random() * (isAddition ? 19 : 10)); // Addition up to 18, subtraction 0-9
-                if (wrong !== correct) wrongs.add(wrong);
-            }
-            return Array.from(wrongs);
-        }
-
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        function displayQuestion() {
-            if (currentQuestion >= totalQuestions) {
-                document.getElementById('problem').innerText = 'Game Over!';
-                document.getElementById('options').innerHTML = '';
-                document.getElementById('feedback').innerText = `You got ${score} out of ${totalQuestions}! 🎉`;
-                document.getElementById('restart').style.display = 'block';
-                // Hide score during game over, but show feedback
-                document.getElementById('score').style.display = 'none';
-                return;
+                avatarHealth -= 0.5;
+                animating = true;
+                animationType = 'dragonAttack';
+                if (avatarHealth <= 0) {
+                    gameOver = true;
+                    messageDiv.textContent = 'Game Over! The dragon wins.';
+                    messageDiv.style.display = 'block';
+                }
             }
 
-            const { problem, correct, isAddition } = generateProblem();
-            document.getElementById('problem').innerText = problem;
-
-            const wrongs = getWrongAnswers(correct, isAddition);
-            const options = shuffle([correct, ...wrongs]);
-
-            const optionsDiv = document.getElementById('options');
-            optionsDiv.innerHTML = '';
-            options.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.classList.add('option-btn');
-                btn.innerText = opt;
-                btn.onclick = () => checkAnswer(opt, correct);
-                optionsDiv.appendChild(btn);
-            });
-
-            document.getElementById('feedback').innerText = '';
-            document.getElementById('score').innerText = `Score: ${score}/${totalQuestions}`;
-        }
-
-        function checkAnswer(selected, correct) {
-            const feedback = document.getElementById('feedback');
-            if (selected === correct) {
-                feedback.innerText = 'Yay! Correct! 😊';
-                feedback.style.color = '#32cd32'; /* Green for correct */
-                score++;
-                currentQuestion++;
-                startFireworks(); // Trigger fireworks without delaying
-                displayQuestion();  // Immediate next question
-            } else {
-                feedback.innerText = `Oops! The answer is ${correct}. Try again! 😔`;
-                feedback.style.color = '#ff4500'; /* Red for incorrect */
-                currentQuestion++;
-                setTimeout(displayQuestion, 2000);  // Delay only on incorrect
+            currentInput = '';
+            inputDisplay.textContent = '';
+            if (!gameOver) {
+                currentQuestion = generateQuestion();
             }
         }
-
-        function startGame() {
-            currentQuestion = 0;
-            score = 0;
-            document.getElementById('start').style.display = 'none';
-            document.getElementById('problem').style.display = 'block';
-            document.getElementById('options').style.display = 'flex';
-            document.getElementById('feedback').style.display = 'block';
-            document.getElementById('score').style.display = 'block';
-            displayQuestion();
-        }
-
-        document.getElementById('start').onclick = startGame;
-
-        document.getElementById('restart').onclick = () => {
-            currentQuestion = 0;
-            score = 0;
-            document.getElementById('restart').style.display = 'none';
-            document.getElementById('problem').style.display = 'block';
-            document.getElementById('options').style.display = 'flex';
-            document.getElementById('feedback').style.display = 'block';
-            document.getElementById('score').style.display = 'block';
-            displayQuestion();
-        };
-
-        // Game does not start automatically; waits for start button
     </script>
 </body>
 </html>
