@@ -13,15 +13,16 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background-color: #f0f0f0;
+            background-color: #121212;
             font-family: Arial, sans-serif;
             overflow: hidden;
+            color: #fff;
         }
         #gameCanvas {
             width: 100%;
             max-width: 600px;
             height: 50vh;
-            background-color: #87CEEB; /* Sky blue background */
+            background-color: #001f3f; /* Dark night sky */
             touch-action: none;
         }
         #question {
@@ -33,10 +34,11 @@
             font-size: 28px;
             margin: 10px 0;
             padding: 10px;
-            border: 2px solid #000;
+            border: 2px solid #fff;
             width: 200px;
             text-align: center;
-            background-color: white;
+            background-color: #222;
+            color: #fff;
         }
         #numpad {
             display: grid;
@@ -48,24 +50,29 @@
         .numButton {
             font-size: 24px;
             padding: 20px;
-            background-color: #ddd;
-            border: 1px solid #aaa;
+            background-color: #333;
+            border: 1px solid #555;
             text-align: center;
             cursor: pointer;
             user-select: none;
             touch-action: manipulation;
-        }
-        #delete {
-            grid-column: span 2;
-        }
-        #enter {
-            grid-column: span 1;
+            color: #fff;
         }
         #message {
             font-size: 32px;
             margin-top: 20px;
             text-align: center;
             color: red;
+            display: none;
+        }
+        #restartButton {
+            font-size: 24px;
+            padding: 10px 20px;
+            background-color: #444;
+            color: #fff;
+            border: 1px solid #666;
+            cursor: pointer;
+            margin-top: 10px;
             display: none;
         }
     </style>
@@ -89,6 +96,7 @@
         <div class="numButton" id="enter" onclick="submitAnswer()">Enter</div>
     </div>
     <div id="message"></div>
+    <button id="restartButton" onclick="restartGame()">Restart Game</button>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -97,6 +105,7 @@
         const inputDisplay = document.getElementById('inputDisplay');
         const messageDiv = document.getElementById('message');
         const numpad = document.getElementById('numpad');
+        const restartButton = document.getElementById('restartButton');
 
         // Set canvas size dynamically
         function resizeCanvas() {
@@ -122,9 +131,9 @@
             ctx.moveTo(x, y + 5);
             ctx.bezierCurveTo(x - 5, y, x - 10, y + 10, x, y + 15);
             ctx.bezierCurveTo(x + 10, y + 10, x + 5, y, x, y + 5);
-            ctx.fillStyle = full ? 'red' : '#ccc';
+            ctx.fillStyle = full ? 'red' : '#555';
             ctx.fill();
-            ctx.strokeStyle = 'black';
+            ctx.strokeStyle = '#fff';
             ctx.stroke();
         }
 
@@ -135,12 +144,13 @@
             ctx.lineTo(x, y + 5);
             ctx.fillStyle = 'red';
             ctx.fill();
-            ctx.strokeStyle = 'black';
+            ctx.strokeStyle = '#fff';
             ctx.stroke();
         }
 
         // Draw avatar (stick figure knight)
         function drawAvatar(x, y) {
+            ctx.strokeStyle = '#fff';
             // Body
             ctx.beginPath();
             ctx.moveTo(x, y);
@@ -186,6 +196,7 @@
 
         // Draw dragon
         function drawDragon(x, y) {
+            ctx.strokeStyle = '#fff';
             // Body
             ctx.beginPath();
             ctx.ellipse(x, y + 20, 40, 20, 0, 0, Math.PI * 2);
@@ -235,6 +246,39 @@
             ctx.stroke();
         }
 
+        // Draw castle in background
+        function drawCastle(x, y) {
+            ctx.fillStyle = '#333'; // Dark gray for castle
+            ctx.strokeStyle = '#fff';
+
+            // Main wall
+            ctx.fillRect(x, y, 100, 80);
+            ctx.strokeRect(x, y, 100, 80);
+
+            // Left tower
+            ctx.fillRect(x - 20, y - 20, 40, 100);
+            ctx.strokeRect(x - 20, y - 20, 40, 100);
+
+            // Right tower
+            ctx.fillRect(x + 80, y - 20, 40, 100);
+            ctx.strokeRect(x + 80, y - 20, 40, 100);
+
+            // Tower tops (triangles)
+            ctx.beginPath();
+            ctx.moveTo(x - 20, y - 20);
+            ctx.lineTo(x, y - 40);
+            ctx.lineTo(x + 20, y - 20);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x + 80, y - 20);
+            ctx.lineTo(x + 100, y - 40);
+            ctx.lineTo(x + 120, y - 20);
+            ctx.fill();
+            ctx.stroke();
+        }
+
         // Draw fire breath animation
         function drawFire(x, y, frame) {
             ctx.fillStyle = 'orange';
@@ -256,6 +300,7 @@
             ctx.moveTo(0, 0);
             ctx.lineTo(10, -10);
             ctx.lineTo(20, 0);
+            ctx.strokeStyle = '#fff';
             ctx.stroke();
             ctx.restore();
         }
@@ -293,6 +338,9 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Draw castle background
+            drawCastle(20, canvas.height - 100);
+
             // Draw avatar
             drawAvatar(100, canvas.height / 2 - 30);
 
@@ -316,6 +364,7 @@
                         numpad.style.display = 'none';
                         questionDiv.textContent = '';
                         inputDisplay.textContent = '';
+                        restartButton.style.display = 'block';
                     }
                 }
             }
@@ -335,6 +384,7 @@
             let a = Math.floor(Math.random() * 12) + 1;
             let b = Math.floor(Math.random() * 12) + 1;
             let answer;
+            let opSymbol = op;
 
             if (op === '+') {
                 answer = a + b;
@@ -343,14 +393,16 @@
                 answer = a - b;
             } else if (op === '*') {
                 answer = a * b;
+                opSymbol = '×';
             } else if (op === '/') {
                 while (a % b !== 0) {
                     b = Math.floor(Math.random() * 12) + 1;
                 }
                 answer = a / b;
+                opSymbol = '÷';
             }
 
-            questionDiv.textContent = `${a} ${op} ${b} = ?`;
+            questionDiv.textContent = `${a} ${opSymbol} ${b} = ?`;
             return { op, a, b, answer };
         }
 
@@ -384,6 +436,7 @@
                 if (dragonHealth <= 0) {
                     gameOver = true;
                     messageDiv.textContent = 'You Win! The dragon is defeated!';
+                    messageDiv.style.color = 'green';
                     messageDiv.style.display = 'block';
                 }
             } else {
@@ -393,6 +446,7 @@
                 if (avatarHealth <= 0) {
                     gameOver = true;
                     messageDiv.textContent = 'Game Over! The dragon wins.';
+                    messageDiv.style.color = 'red';
                     messageDiv.style.display = 'block';
                 }
             }
@@ -402,6 +456,18 @@
             if (!gameOver) {
                 currentQuestion = generateQuestion();
             }
+        }
+
+        function restartGame() {
+            avatarHealth = 3;
+            dragonHealth = 3;
+            gameOver = false;
+            messageDiv.style.display = 'none';
+            restartButton.style.display = 'none';
+            numpad.style.display = 'grid';
+            currentQuestion = generateQuestion();
+            inputDisplay.textContent = '';
+            currentInput = '';
         }
     </script>
 </body>
