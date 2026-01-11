@@ -22,7 +22,7 @@
             width: 100%;
             max-width: 600px;
             height: 50vh;
-            background-color: #001f3f; /* Dark night sky */
+            background-color: #001f3f; /* Fallback dark night sky */
             touch-action: none;
         }
         #question {
@@ -91,9 +91,9 @@
         <div class="numButton" onclick="appendNumber('7')">7</div>
         <div class="numButton" onclick="appendNumber('8')">8</div>
         <div class="numButton" onclick="appendNumber('9')">9</div>
-        <div class="numButton" id="delete" onclick="deleteLast()">Delete</div>
+        <div class="numButton" id="delete" onclick="deleteLast()">⌦</div>
         <div class="numButton" onclick="appendNumber('0')">0</div>
-        <div class="numButton" id="enter" onclick="submitAnswer()">Enter</div>
+        <div class="numButton" id="enter" onclick="submitAnswer()">=</div>
     </div>
     <div id="message"></div>
     <button id="restartButton" onclick="restartGame()">Restart Game</button>
@@ -115,6 +115,11 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
+        // Background image
+        const bgImage = new Image();
+        bgImage.src = 'https://img.freepik.com/premium-photo/medieval-castle-background-fantasy-magical-illustration-palace-game-concept-art-design_573238-122.jpg';
+        bgImage.onload = () => { /* Image loaded */ };
+
         // Game state
         let avatarHealth = 3;
         let dragonHealth = 3;
@@ -124,6 +129,56 @@
         let animationFrame = 0;
         let animating = false;
         let animationType = ''; // 'avatarAttack' or 'dragonAttack'
+        let deathAnimationFrame = 0;
+        let fireworksParticles = [];
+        let fireParticles = [];
+
+        // Particle class for fireworks and fire
+        class Particle {
+            constructor(x, y, vx, vy, color, life) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.life = life;
+                this.initialLife = life;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.1; // Gravity
+                this.life--;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.life / this.initialLife;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // Create fireworks
+        function createFireworks() {
+            for (let i = 0; i < 50; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 2;
+                const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                fireworksParticles.push(new Particle(canvas.width / 2, canvas.height / 2, Math.cos(angle) * speed, Math.sin(angle) * speed - 5, color, 60));
+            }
+        }
+
+        // Create fire on avatar
+        function createFire() {
+            for (let i = 0; i < 50; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 3 + 1;
+                const color = Math.random() > 0.5 ? 'orange' : 'red';
+                fireParticles.push(new Particle(100, canvas.height / 2, Math.cos(angle) * speed, Math.sin(angle) * speed - 3, color, 60));
+            }
+        }
 
         // Heart drawing functions
         function drawHeart(x, y, full) {
@@ -149,8 +204,15 @@
         }
 
         // Draw avatar (stick figure knight)
-        function drawAvatar(x, y) {
+        function drawAvatar(x, y, fallen = false) {
             ctx.strokeStyle = '#fff';
+            if (fallen) {
+                ctx.save();
+                ctx.translate(x, y + 30);
+                ctx.rotate(Math.PI / 2); // Fall to the side
+                x = 0;
+                y = -30;
+            }
             // Body
             ctx.beginPath();
             ctx.moveTo(x, y);
@@ -186,17 +248,31 @@
             ctx.lineTo(x + 10, y + 60);
             ctx.stroke();
 
-            // Sword
+            // Larger claymore sword
             ctx.beginPath();
             ctx.moveTo(x + 15, y + 20);
-            ctx.lineTo(x + 25, y + 10);
-            ctx.lineTo(x + 35, y + 20);
+            ctx.lineTo(x + 30, y - 10); // Longer blade
+            ctx.lineTo(x + 40, y - 5);
+            ctx.lineTo(x + 25, y + 25); // Back to hilt
+            ctx.moveTo(x + 10, y + 15); // Crossguard
+            ctx.lineTo(x + 20, y + 25);
             ctx.stroke();
+
+            if (fallen) {
+                ctx.restore();
+            }
         }
 
         // Draw dragon
-        function drawDragon(x, y) {
+        function drawDragon(x, y, dead = false) {
             ctx.strokeStyle = '#fff';
+            if (dead) {
+                ctx.save();
+                ctx.translate(x, y + 30);
+                ctx.rotate(Math.PI); // Flip on back
+                x = 0;
+                y = -30;
+            }
             // Body
             ctx.beginPath();
             ctx.ellipse(x, y + 20, 40, 20, 0, 0, Math.PI * 2);
@@ -208,11 +284,28 @@
             ctx.stroke();
 
             // Eyes
-            ctx.beginPath();
-            ctx.arc(x - 55, y - 5, 2, 0, Math.PI * 2);
-            ctx.arc(x - 45, y - 5, 2, 0, Math.PI * 2);
-            ctx.fillStyle = 'red';
-            ctx.fill();
+            if (dead) {
+                // X eyes
+                ctx.beginPath();
+                ctx.moveTo(x - 58, y - 7);
+                ctx.lineTo(x - 52, y - 3);
+                ctx.moveTo(x - 52, y - 7);
+                ctx.lineTo(x - 58, y - 3);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x - 48, y - 7);
+                ctx.lineTo(x - 42, y - 3);
+                ctx.moveTo(x - 42, y - 7);
+                ctx.lineTo(x - 48, y - 3);
+                ctx.stroke();
+            } else {
+                // Normal eyes
+                ctx.beginPath();
+                ctx.arc(x - 55, y - 5, 2, 0, Math.PI * 2);
+                ctx.arc(x - 45, y - 5, 2, 0, Math.PI * 2);
+                ctx.fillStyle = 'red';
+                ctx.fill();
+            }
 
             // Mouth
             ctx.beginPath();
@@ -244,39 +337,10 @@
             ctx.moveTo(x + 20, y + 40);
             ctx.lineTo(x + 25, y + 50);
             ctx.stroke();
-        }
 
-        // Draw castle in background
-        function drawCastle(x, y) {
-            ctx.fillStyle = '#333'; // Dark gray for castle
-            ctx.strokeStyle = '#fff';
-
-            // Main wall
-            ctx.fillRect(x, y, 100, 80);
-            ctx.strokeRect(x, y, 100, 80);
-
-            // Left tower
-            ctx.fillRect(x - 20, y - 20, 40, 100);
-            ctx.strokeRect(x - 20, y - 20, 40, 100);
-
-            // Right tower
-            ctx.fillRect(x + 80, y - 20, 40, 100);
-            ctx.strokeRect(x + 80, y - 20, 40, 100);
-
-            // Tower tops (triangles)
-            ctx.beginPath();
-            ctx.moveTo(x - 20, y - 20);
-            ctx.lineTo(x, y - 40);
-            ctx.lineTo(x + 20, y - 20);
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(x + 80, y - 20);
-            ctx.lineTo(x + 100, y - 40);
-            ctx.lineTo(x + 120, y - 20);
-            ctx.fill();
-            ctx.stroke();
+            if (dead) {
+                ctx.restore();
+            }
         }
 
         // Draw fire breath animation
@@ -298,8 +362,8 @@
             ctx.rotate((frame / 20) * Math.PI);
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.lineTo(10, -10);
-            ctx.lineTo(20, 0);
+            ctx.lineTo(15, -15); // Larger swing for claymore
+            ctx.lineTo(25, -10);
             ctx.strokeStyle = '#fff';
             ctx.stroke();
             ctx.restore();
@@ -307,6 +371,7 @@
 
         // Render health hearts
         function renderHealth() {
+            if (gameOver) return; // No health bars on death
             // Avatar hearts
             for (let i = 0; i < 3; i++) {
                 const heartX = 50 + i * 30;
@@ -338,16 +403,18 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw castle background
-            drawCastle(20, canvas.height - 100);
+            // Draw background image
+            if (bgImage.complete) {
+                ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+            }
 
             // Draw avatar
-            drawAvatar(100, canvas.height / 2 - 30);
+            drawAvatar(100, canvas.height / 2 - 30, gameOver && avatarHealth <= 0);
 
             // Draw dragon
-            drawDragon(canvas.width - 100, canvas.height / 2 - 30);
+            drawDragon(canvas.width - 100, canvas.height / 2 - 30, gameOver && dragonHealth <= 0);
 
-            // Render health
+            // Render health (only if not game over)
             renderHealth();
 
             if (animating) {
@@ -365,7 +432,34 @@
                         questionDiv.textContent = '';
                         inputDisplay.textContent = '';
                         restartButton.style.display = 'block';
+                        deathAnimationFrame = 0;
+                        if (dragonHealth <= 0) {
+                            createFireworks();
+                        } else {
+                            createFire();
+                        }
                     }
+                }
+            }
+
+            if (gameOver) {
+                // Animate fireworks or fire
+                if (dragonHealth <= 0) {
+                    fireworksParticles.forEach((p, index) => {
+                        p.update();
+                        p.draw();
+                        if (p.life <= 0) fireworksParticles.splice(index, 1);
+                    });
+                } else {
+                    fireParticles.forEach((p, index) => {
+                        p.update();
+                        p.draw();
+                        if (p.life <= 0) fireParticles.splice(index, 1);
+                    });
+                }
+                deathAnimationFrame++;
+                if (deathAnimationFrame > 60) {
+                    // Stop after some time, but particles handle themselves
                 }
             }
         }
@@ -468,6 +562,8 @@
             currentQuestion = generateQuestion();
             inputDisplay.textContent = '';
             currentInput = '';
+            fireworksParticles = [];
+            fireParticles = [];
         }
     </script>
 </body>
